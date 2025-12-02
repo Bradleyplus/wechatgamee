@@ -38,13 +38,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------- 云存储配置 ----------------------
-APP_ID = "hiwS1jgaGdLqJhk2UtEwHGdK-gzGzoHsz"  # 新应用的AppID（从控制台复制）
-APP_KEY = "bENg8Yr0ULGdt7NJB70i2VOW"  # 新应用的AppKey（从控制台复制）
-BASE_API_URL = "https://hiwS1jga.lc-cn-n1-shared.com/1.1/classes/GameState"
+# ---------------------- 云存储配置（必须与LeanCloud控制台完全一致） ----------------------
+# 1. 从LeanCloud控制台“设置-应用凭证”复制以下信息
+APP_ID = "M4eT4HnMmoRZrfmhpCcon7Kf-gzGzoHsz"  # 例如："hiwS1jgaGdLqJhk2UtEwHGdK-gzGzoHsz"（确保无拼写错误）
+APP_KEY = "qGwYdl4RNFMDpxoydgFHMnD6"  # 例如："bENg8Yr0ULGdt7NJB70i2VOW"（确保无拼写错误）
+# 2. 从LeanCloud控制台“设置-应用凭证-服务地址”复制REST API地址，末尾加“/1.1/classes/GameState”
+BASE_API_URL = "https://m4et4hnm.lc-cn-n1-shared.com/1.1/classes/GameState"  # 例如："https://hiwS1jga.lc-cn-n1-shared.com/1.1/classes/GameState"
+
 HEADERS = {
     "X-LC-Id": APP_ID,
-    "X-LC-Key": APP_KEY,
+    "X-LC-Key": APP_KEY,  # 仅填AppKey，不要加其他内容
     "Content-Type": "application/json"
 }
 
