@@ -5,7 +5,7 @@ import time
 
 # ---------------------- 页面配置与样式 ----------------------
 st.set_page_config(
-    page_title="Two-Player Tic-Tac-Toe",
+    page_title="双人井字棋",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -39,10 +39,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------- 云存储配置 ----------------------
-# ---------------------- 云存储配置（替换为新LeanCloud应用信息） ----------------------
 APP_ID = "hiwS1jgaGdLqJhk2UtEwHGdK-gzGzoHsz"  # 新应用的AppID（从控制台复制）
 APP_KEY = "bENg8Yr0ULGdt7NJB70i2VOW"  # 新应用的AppKey（从控制台复制）
-# 新应用的REST API服务地址 + 数据Class路径（GameState是你的数据类名）
 BASE_API_URL = "https://hiwS1jga.lc-cn-n1-shared.com/1.1/classes/GameState"
 HEADERS = {
     "X-LC-Id": APP_ID,
@@ -65,7 +63,7 @@ def check_winner(board):
         if board[a] == board[b] == board[c] != "":
             return board[a]  # 返回胜利方（X/O）
     if "" not in board:
-        return "Draw"
+        return "平局"
     return None  # 未分胜负
 
 
@@ -83,12 +81,12 @@ def force_clean_room(room_id):
         if res.status_code == 200 and res.json().get("results"):
             for record in res.json()["results"]:
                 requests.delete(f"{BASE_API_URL}/{record['objectId']}", headers=HEADERS, timeout=10)
-            st.success(f"Room {room_id} cleaned!")
+            st.success(f"房间 {room_id} 清理完成！")
             time.sleep(1)
             return True
-        st.info(f"No records for room {room_id}")
+        st.info(f"房间 {room_id} 暂无记录")
     except Exception as e:
-        st.error(f"Clean error: {str(e)}")
+        st.error(f"清理失败：{str(e)}")
     return False
 
 
@@ -108,14 +106,14 @@ def load_room(room_id):
             return room_data
         return None
     except Exception as e:
-        st.error(f"Load error: {str(e)}")
+        st.error(f"加载失败：{str(e)}")
         return None
 
 
 def create_room(room_id):
     existing_room = load_room(room_id)
     if existing_room:
-        st.warning(f"Room {room_id} exists! Joining...")
+        st.warning(f"房间 {room_id} 已存在！正在加入...")
         return existing_room
 
     device_id = get_device_id()
@@ -132,10 +130,10 @@ def create_room(room_id):
         res.raise_for_status()
         new_data = res.json()
         init_data["objectId"] = new_data["objectId"]
-        st.success(f"Room {room_id} created (ID: {new_data['objectId'][:8]})")
+        st.success(f"房间 {room_id} 创建成功（ID：{new_data['objectId'][:8]}）")
         return init_data
     except Exception as e:
-        st.error(f"Create failed: {str(e)} | Response: {res.text if 'res' in locals() else 'None'}")
+        st.error(f"创建失败：{str(e)} | 响应：{res.text if 'res' in locals() else '无'}")
         return None
 
 
@@ -147,7 +145,7 @@ def enter_room(room_id):
         return create_room(room_id)
 
     if device_id in room_data["players"]:
-        st.info(f"Already in room {room_id} (role: {room_data['players'][device_id]})")
+        st.info(f"已在房间 {room_id} 中（角色：{room_data['players'][device_id]}）")
         return room_data
 
     if len(room_data["players"]) < 2:
@@ -166,15 +164,15 @@ def enter_room(room_id):
             time.sleep(1.5)
             verified_room = load_room(room_id)
             if verified_room and device_id in verified_room["players"]:
-                st.success(f"Joined as O (Room ID: {verified_room['objectId'][:8]})")
+                st.success(f"以O角色加入房间（房间ID：{verified_room['objectId'][:8]}）")
                 return verified_room
-            st.error("Join failed: Role not saved")
+            st.error("加入失败：角色未保存")
             return None
         except Exception as e:
-            st.error(f"Join error: {str(e)} | Response: {res.text if 'res' in locals() else 'None'}")
+            st.error(f"加入失败：{str(e)} | 响应：{res.text if 'res' in locals() else '无'}")
             return None
 
-    st.error("Room is full (2 players)")
+    st.error("房间已满（2人）")
     return None
 
 
@@ -183,7 +181,7 @@ def auto_restore_state(room_id):
     if st.session_state.entered_room:
         room_data = load_room(room_id)
         if not room_data:
-            st.warning("Room not found. Re-enter.")
+            st.warning("房间不存在，请重新进入")
             st.session_state.entered_room = False
             return False
         device_id = get_device_id()
@@ -197,15 +195,15 @@ def auto_restore_state(room_id):
             st.session_state.my_role = room_data["players"][device_id]
             return True
         st.session_state.entered_room = False
-        st.warning("You're not in this room. Re-enter.")
+        st.warning("你不在该房间内，请重新进入")
     return False
 
 
 # ---------------------- 主页面逻辑 ----------------------
-st.title("🎮 呆瓜宝小游戏 Tic-Tac-Toe")
+st.title("🎮 呆瓜宝小游戏 - 双人井字棋")
 
 room_id = st.selectbox(
-    "🔑 Select Room",
+    "🔑 选择房间号",
     options=["8888", "6666"],
     index=0,
     key="room_selector"
@@ -230,27 +228,27 @@ for key, default in required_states.items():
 device_id = get_device_id()
 st.markdown(f"""
 <div class="debug-box">
-- Your device ID: <strong>{device_id[:8]}...</strong><br>
-- Room: <strong>{room_id}</strong><br>
-{'- Room unique ID: <span class="room-id-box">{st.session_state.object_id[:8]}...</span>' if st.session_state.object_id else ''}
+- 你的设备ID：<strong>{device_id[:8]}...</strong><br>
+- 房间号：<strong>{room_id}</strong><br>
+{'- 房间唯一ID：<span class="room-id-box">{st.session_state.object_id[:8]}...</span>' if st.session_state.object_id else ''}
 </div>
 """, unsafe_allow_html=True)
 
 auto_restore_state(room_id)
 
 # 操作按钮
-if st.button("⚠️ Force Clean Room", use_container_width=True, type="secondary"):
+if st.button("⚠️ 强制清理房间", use_container_width=True, type="secondary"):
     if force_clean_room(room_id):
         st.rerun()
 
 col_refresh, col_exit = st.columns(2)
 with col_refresh:
-    if st.button("🔄 Refresh", use_container_width=True):
+    if st.button("🔄 刷新", use_container_width=True):
         auto_restore_state(room_id)
-        st.success("Refreshed")
+        st.success("刷新完成")
 
 with col_exit:
-    if st.button("🚪 Exit Room", use_container_width=True) and st.session_state.entered_room:
+    if st.button("🚪 退出房间", use_container_width=True) and st.session_state.entered_room:
         room_data = load_room(room_id)
         if room_data:
             device_id = get_device_id()
@@ -264,13 +262,13 @@ with col_exit:
                     timeout=10
                 )
         st.session_state.entered_room = False
-        st.success("Exited")
+        st.success("已退出房间")
         st.rerun()
 
 # 进入房间
 if not st.session_state.entered_room:
-    if st.button("📥 Enter Room", use_container_width=True, type="primary"):
-        with st.spinner(f"Joining room {room_id}..."):
+    if st.button("📥 进入房间", use_container_width=True, type="primary"):
+        with st.spinner(f"正在加入房间 {room_id}..."):
             room_data = enter_room(room_id)
             if room_data:
                 st.session_state.entered_room = True
@@ -285,25 +283,25 @@ if not st.session_state.entered_room:
 if st.session_state.entered_room and st.session_state.my_role:
     st.divider()
     st.info(f"""
-    Room {room_id} (Players: {len(st.session_state.players)}/2)<br>
-    Your role: {st.session_state.my_role} | Current turn: {st.session_state.current_player}
-    {">>> Wait for opponent" if st.session_state.my_role != st.session_state.current_player else ">>> Your turn to play!"}
+    房间 {room_id}（玩家数：{len(st.session_state.players)}/2）<br>
+    你的角色：{st.session_state.my_role} | 当前回合：{st.session_state.current_player}
+    {">>> 等待对手落子..." if st.session_state.my_role != st.session_state.current_player else ">>> 轮到你落子啦！"}
     """)
 
     st.markdown(f"""
     <div class="debug-box">
-    Players in room:<br>
+    房间内玩家：<br>
     {[f"- {k[:8]}...({v})" for k, v in st.session_state.players.items()]}
     </div>
     """, unsafe_allow_html=True)
 
     # 游戏结束提示（提前显示）
     if st.session_state.game_over:
-        result = f"{st.session_state.winner} wins!" if st.session_state.winner != "Draw" else "Draw!"
-        st.success(f"🏆 Game Over: {result}")
+        result = f"{st.session_state.winner} 获胜！" if st.session_state.winner != "平局" else "平局！"
+        st.success(f"🏆 游戏结束：{result}")
 
     # 棋盘渲染（修复按钮禁用逻辑）
-    st.subheader("Game Board")
+    st.subheader("游戏棋盘")
     with st.container():
         st.markdown('<div class="board-container">', unsafe_allow_html=True)
         rows = [st.columns(3, gap="small") for _ in range(3)]
@@ -358,17 +356,17 @@ if st.session_state.entered_room and st.session_state.my_role:
                         )
                         # 胜利提示（落子后立即显示）
                         if winner:
-                            st.success(f"🎉 You won! (Role: {st.session_state.my_role})")
+                            st.success(f"🎉 你赢啦！（角色：{st.session_state.my_role}）")
                         else:
-                            st.success("Move saved! Opponent refresh to see.")
+                            st.success("落子成功！对手刷新后可见")
                     except Exception as e:
-                        st.warning(f"Sync failed: {str(e)}")
+                        st.warning(f"同步失败：{str(e)}")
                     st.rerun()
 
         st.markdown('</div>', unsafe_allow_html=True)
 
     # 重新开始
-    if st.button("🔄 Restart Game", use_container_width=True) and st.session_state.game_over:
+    if st.button("🔄 重新开始游戏", use_container_width=True) and st.session_state.game_over:
         st.session_state.board = ["", "", "", "", "", "", "", "", ""]
         st.session_state.current_player = "X"
         st.session_state.game_over = False
@@ -385,13 +383,13 @@ if st.session_state.entered_room and st.session_state.my_role:
                 },
                 timeout=10
             )
-            st.success("Game restarted!")
+            st.success("游戏已重新开始！")
         except Exception as e:
-            st.warning(f"Restart failed: {str(e)}")
+            st.warning(f"重新开始失败：{str(e)}")
         st.rerun()
 
 st.caption("""
-💡 Fix for final move issue:
-1. Ensure "Your role" matches "Current turn" when placing the winning move
-2. The winning move will trigger an immediate "You won!" notification
+💡 最后一步落子问题修复说明：
+1. 放置制胜一步时，请确保“你的角色”与“当前回合”一致
+2. 制胜一步会立即触发“你赢啦！”的提示
 """)
